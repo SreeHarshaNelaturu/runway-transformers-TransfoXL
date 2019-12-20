@@ -140,8 +140,8 @@ def setup():
 
 command_inputs = {
     "input_prompt" : text, 
-    "length" : number(default=20, step=5, description="Output Text Length"),
-    "temperature" : number(default=1.0, step=0.1, description="Temperature of output distribution")
+    "length" : number(default=20, step=5, max=500, description="Output Text Length"),
+    "temperature" : number(default=1.0, min = 0, max = 1.5, step=0.1,  description="Temperature of output distribution")
 }
 
 command_outputs = {"generated_text" : text}
@@ -157,9 +157,8 @@ def generate_text(model_opts, inputs):
     num_samples = 1 
     temperature = inputs["temperature"]
     repetition_penalty = 1.0
-    top_k = 1
+    top_k = 0
     top_p = 0.9
-    no_cuda = torch.cuda.is_available()
     stop_token = 'None'
     
     if length < 0 and model.config.max_position_embeddings > 0:
@@ -172,10 +171,10 @@ def generate_text(model_opts, inputs):
     while True:
         
 
-        raw_text = inputs["input_prompt"]
-        
+        input_prompt = inputs["input_prompt"]
+        prompt_text = input_prompt
         # Models with memory likes to have a long prompt for short inputs.
-        raw_text = (PADDING_TEXT) + raw_text
+        raw_text = (PADDING_TEXT) + input_prompt
         context_tokens = tokenizer.encode(raw_text, add_special_tokens=False)
         
         out = sample_sequence(
@@ -195,8 +194,9 @@ def generate_text(model_opts, inputs):
             text = text[: text.find(stop_token) if stop_token else None]
 
         if raw_text:
-           break
-    return text
+            break
+
+    return prompt_text + " " + text
 
 
 if __name__ == '__main__':
